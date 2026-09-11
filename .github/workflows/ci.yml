@@ -1,0 +1,60 @@
+name: Test Automation CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run API tests
+        run: pytest -m api --html=reports/api-report.html --self-contained-html
+
+      - name: Upload API report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-report
+          path: reports/api-report.html
+
+  web-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Run web tests
+        env:
+          HEADLESS: "true"
+        run: pytest -m web --reruns 2 --reruns-delay 3 --html=reports/web-report.html --self-contained-html
+
+      - name: Upload web report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-report
+          path: |
+            reports/web-report.html
+            reports/screenshots
